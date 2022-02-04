@@ -11,7 +11,7 @@ const Stack = createNativeStackNavigator();
 export default function App() {
     return (
         <NavigationContainer>
-            <Stack.Navigator initialRouteName={"ShareLive"}>
+            <Stack.Navigator initialRouteName={"Splash"}>
                 <Stack.Screen
                     name="Splash"
                     component={SplashComponent}
