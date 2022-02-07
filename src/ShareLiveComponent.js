@@ -15,7 +15,7 @@ let watchID;
 import MapboxGL, {Logger} from "@react-native-mapbox-gl/maps";
 import {Headline} from "react-native-paper";
 import firestore from "@react-native-firebase/firestore";
-MapboxGL.setAccessToken('pk.eyJ1IjoiYXNlZWRrIiwiYSI6ImNreXdkZzZlaTAxZnEydXF2NGJpZWxxbWsifQ.AaZxXeDyG8DX55ajg8Nwog');
+MapboxGL.setAccessToken('pk.eyJ1IjoiYXNlZWRrIiwiYSI6ImNremF6MTN4YTA4NTEydW50cmxnYmRodnIifQ.CZl7Mza55vy7J8tYdy4eyg');
 
 Logger.setLogCallback(log => {
     const { message } = log;
@@ -121,7 +121,9 @@ const App =({navigation, route})=> {
                 </View>
             </View>
             <View style={styles.container}>
-                <MapboxGL.MapView style={styles.map}>
+                <MapboxGL.MapView
+                    style={styles.map}
+                >
                     <MapboxGL.Camera
                         zoomLevel={16}
                         centerCoordinate={coordinates}
