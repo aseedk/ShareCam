@@ -6,6 +6,8 @@ import RegisterComponent from "./RegisterComponent";
 import MainMenuComponent from "./MainMenuComponent";
 import SplashComponent from "./SplashComponent";
 import ShareLiveComponent from "./ShareLiveComponent";
+import MuxComponent from "./muxComponent";
+import ContactComponent from "./ContactComponent";
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -31,6 +33,14 @@ export default function App() {
                 <Stack.Screen
                     name="ShareLive"
                     component={ShareLiveComponent}
+                    options={{headerShown: false}}/>
+                <Stack.Screen
+                    name="Mux"
+                    component={MuxComponent}
+                    options={{headerShown: false}}/>
+                <Stack.Screen
+                    name="Contact"
+                    component={ContactComponent}
                     options={{headerShown: false}}/>
             </Stack.Navigator>
         </NavigationContainer>

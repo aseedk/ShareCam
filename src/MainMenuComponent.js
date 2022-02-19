@@ -26,20 +26,27 @@ export default function MainMenuComponent({route, navigation}){
             </View>
             <ScrollView style={styles.dashboard}>
                 <View style={styles.cardRow}>
-                    <Card style={styles.card}>
-                        <Card.Title
-                            left={(props) =>
-                                <Avatar.Icon {...props}
-                                             color={'#05A3D9'}
-                                             size={75}
-                                             style={styles.cardBackground}
-                                             icon="account" />}
-                        />
-                        <Card.Content>
-                            <Text style={styles.cardContentText}>Add/Remove Contact</Text>
-                            <Paragraph style={styles.cardContentParagraph}>Add or remove contact to your sharing list</Paragraph>
-                        </Card.Content>
-                    </Card>
+                    <TouchableOpacity style={styles.card}
+                                      onPress={()=> navigation.navigate('Contact',{
+                                          user: user
+                                      })}
+                    >
+                        <Card>
+                            <Card.Title
+                                left={(props) =>
+                                    <Avatar.Icon {...props}
+                                                 color={'#05A3D9'}
+                                                 size={75}
+                                                 style={styles.cardBackground}
+                                                 icon="account" />}
+                            />
+                            <Card.Content>
+                                <Text style={styles.cardContentText}>Add/Remove Contact</Text>
+                                <Paragraph style={styles.cardContentParagraph}>Add or remove contact to your sharing list</Paragraph>
+                            </Card.Content>
+                        </Card>
+                    </TouchableOpacity>
+
                     <Card style={styles.card}>
                         <Card.Title
                             left={(props) =>

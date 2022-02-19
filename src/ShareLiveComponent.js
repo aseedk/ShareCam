@@ -10,6 +10,12 @@ import {
     Alert, ToastAndroid,
 } from 'react-native';
 import {Button} from 'react-native-paper'
+import axios from "axios";
+import {  NodeCameraView } from 'react-native-nodemediaclient';
+
+const MUX_TOKEN_ID = "a798af76-e85a-4357-b2fc-c96d6c5531af"
+const MUX_TOKEN_SECRET = "s7BP7+tk0Hr2Yl1rNjYojOd/MVtyI1EsVGXNT31nvCDzF/PpjaePiVqAPRe76zC/aoj1ghl//dH";
+
 import Geolocation from '@react-native-community/geolocation';
 let watchID;
 import MapboxGL, {Logger} from "@react-native-mapbox-gl/maps";
@@ -26,6 +32,7 @@ Logger.setLogCallback(log => {
 
 const App =({navigation, route})=> {
     const user = route.params?.user;
+    const [streamKey, setStreamKey] = useState("");
     let [liveId, setLiveId] = useState('');
     let [shareCheck, setShareCheck] = useState(false);
     const [coordinates, setCoordinates] = useState([0, 0]);
@@ -52,7 +59,30 @@ const App =({navigation, route})=> {
                 }
             }
         };
+        const requestCameraPermission = async ()=>{
+            try {
+                const granted = await PermissionsAndroid.requestMultiple([PermissionsAndroid.PERMISSIONS.CAMERA,PermissionsAndroid.PERMISSIONS.RECORD_AUDIO],
+                    {
+                        title: "Cool Photo App Camera And Microphone Permission",
+                        message:
+                            "Cool Photo App needs access to your camera " +
+                            "so you can take awesome pictures.",
+                        buttonNeutral: "Ask Me Later",
+                        buttonNegative: "Cancel",
+                        buttonPositive: "OK"
+                    }
+                );
+                if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+                    console.log("You can use the camera");
+                } else {
+                    console.log("Camera permission denied");
+                }
+            } catch (err) {
+                console.warn(err);
+            }
+        }
         requestLocationPermission().then();
+        requestCameraPermission().then();
         return () => {
             Geolocation.clearWatch(watchID);
         };
@@ -120,6 +150,20 @@ const App =({navigation, route})=> {
                     <Text style={styles.logoTextSecond}>Cam.</Text>
                 </View>
             </View>
+            <View style={{flex:2, height:'100%',width:'100%', backgroundColor:'red'}}>
+                <NodeCameraView
+                    style={styles.nodeCameraView}
+                    ref={(vb) => { this.vb = vb }}
+                    outputUrl = {"rtmps://global-live.mux.com:443/app/" + streamKey}
+                    camera={{ cameraId: 0, cameraFrontMirror: true }}
+                    audio={{ bitrate: 32000, profile: 1, samplerate: 44100 }}
+                    video={{ preset: 12, bitrate: 400000, profile: 1, fps: 15, videoFrontMirror: false }}
+                    autopreview={true}
+                    onStatus={(code, msg) => {
+                        console.log("onStatus=" + code + " msg=" + msg);
+                    }}
+                />
+            </View>
             <View style={styles.container}>
                 <MapboxGL.MapView
                     style={styles.map}
@@ -148,13 +192,32 @@ const App =({navigation, route})=> {
                     </MapboxGL.MarkerView>
                 </MapboxGL.MapView>
             </View>
-            <View style={{flex:2}}>
+            <View style={{flex:1}}>
                 <Button
                     mode={'contained'}
                     style={styles.loginButton}
-                    onPress={()=>{
+                    onPress={async () => {
                         console.log(user.id);
                         //getOneTimeLocation();
+                        const mux_instance = axios.create({
+                            baseURL: 'https://api.mux.com',
+                            method: 'post',
+                            headers: {'Content-Type': 'application/json'},
+                            auth: {
+                                username: MUX_TOKEN_ID,
+                                password: MUX_TOKEN_SECRET
+                            }
+                        });
+                        //console.log(mux_instance);
+                        const mux_response = await mux_instance.post("/video/v1/live-streams", {
+                            "playback_policy": ["public"],
+                            "new_asset_settings": {
+                                "playback_policy": ["public"]
+                            }
+                        });
+                        console.log(mux_response.data.data.stream_key);
+                        console.log(mux_response.data.data.playback_ids[0]);
+                        setStreamKey(mux_response.data.data.stream_key);
                         firestore()
                             .collection('Live')
                             .add({
@@ -164,12 +227,14 @@ const App =({navigation, route})=> {
                                 startTime: new Date(),
                                 historyCoordinates: [{longitude: coordinates[0], latitude: coordinates[1]}],
                                 endCoordinates: coordinates,
+                                playbackId: mux_response.data.data.playback_ids[0],
                                 endTime: new Date()
                             })
                             .then((doc) => {
                                 console.log(doc.id);
                                 setLiveId(doc.id);
                                 setShareCheck(true);
+                                this.vb.start();
                             })
                             .catch(e => console.log(e))
                         ;
@@ -178,7 +243,7 @@ const App =({navigation, route})=> {
                     <Text style={styles.loginButtonText}>Share Live</Text>
                 </Button>
             </View>
-            <View style={{flex: 1, flexDirection:'row'}}>
+            {/*<View style={{flex: 1, flexDirection:'row'}}>
                 <Button
                     mode={'contained'}
                     style={styles.loginButton}
@@ -191,12 +256,20 @@ const App =({navigation, route})=> {
                 >
                     <Text style={styles.loginButtonText}>Security</Text>
                 </Button>
-            </View>
+            </View>*/}
         </View>
     );
 }
 
 const styles = StyleSheet.create({
+    nodeCameraView: {
+        height:'100%',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        bottom: 0,
+        right: 0,
+    },
     mainView: {
         justifyContent: 'center',
         backgroundColor:'#fff'
@@ -234,7 +307,7 @@ const styles = StyleSheet.create({
         height: '100%',
         width: '100%',
         backgroundColor: 'blue',
-        flex: 2
+        flex: 1.5
     },
     map: {
         width: '100%',
