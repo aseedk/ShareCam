@@ -7,7 +7,8 @@ import {
     Image,
     PermissionsAndroid,
     Platform,
-    Alert, ToastAndroid,
+    Clipboard,
+    Alert, ToastAndroid, Dimensions,
 } from 'react-native';
 import {Button} from 'react-native-paper'
 import axios from "axios";
@@ -15,7 +16,7 @@ import {  NodeCameraView } from 'react-native-nodemediaclient';
 
 const MUX_TOKEN_ID = "a798af76-e85a-4357-b2fc-c96d6c5531af"
 const MUX_TOKEN_SECRET = "s7BP7+tk0Hr2Yl1rNjYojOd/MVtyI1EsVGXNT31nvCDzF/PpjaePiVqAPRe76zC/aoj1ghl//dH";
-
+import QRCode from 'react-native-qrcode-svg';
 import Geolocation from '@react-native-community/geolocation';
 let watchID;
 import MapboxGL, {Logger} from "@react-native-mapbox-gl/maps";
@@ -32,8 +33,9 @@ Logger.setLogCallback(log => {
 
 const App =({navigation, route})=> {
     const user = route.params?.user;
+    const [qrCode, setQrCode] = useState(false);
     const [streamKey, setStreamKey] = useState("");
-    let [liveId, setLiveId] = useState('');
+    let [liveId, setLiveId] = useState('test.com');
     let [shareCheck, setShareCheck] = useState(false);
     const [coordinates, setCoordinates] = useState([0, 0]);
     useEffect(() => {
@@ -97,7 +99,6 @@ const App =({navigation, route})=> {
                     JSON.stringify(position.coords.latitude);
                 setCoordinates([parseFloat(currentLongitude), parseFloat(currentLatitude)])
                 if (shareCheck){
-                    console.log(liveId);
                     firestore()
                         .collection('Live')
                         .doc(liveId)
@@ -133,10 +134,11 @@ const App =({navigation, route})=> {
                 setCoordinates([parseFloat(currentLongitude), parseFloat(currentLatitude)])
             },
             (error) => {
+                console.log("ateaf");
                 console.log(error.message);
             },
             {
-                enableHighAccuracy: false,
+                enableHighAccuracy: true,
                 timeout: 10000,
                 maximumAge: 0
             },
@@ -152,7 +154,7 @@ const App =({navigation, route})=> {
             </View>
             <View style={{flex:2, height:'100%',width:'100%', backgroundColor:'red'}}>
                 <NodeCameraView
-                    style={styles.nodeCameraView}
+                    style={[styles.nodeCameraView, {visibility: qrCode ? 'hidden' : 'visible'}]}
                     ref={(vb) => { this.vb = vb }}
                     outputUrl = {"rtmps://global-live.mux.com:443/app/" + streamKey}
                     camera={{ cameraId: 0, cameraFrontMirror: true }}
@@ -163,41 +165,53 @@ const App =({navigation, route})=> {
                         console.log("onStatus=" + code + " msg=" + msg);
                     }}
                 />
-            </View>
-            <View style={styles.container}>
-                <MapboxGL.MapView
-                    style={styles.map}
-                >
-                    <MapboxGL.Camera
-                        zoomLevel={16}
-                        centerCoordinate={coordinates}
+                </View>
+
+            {qrCode && (
+                <View style={{flex: 3}}>
+                    <QRCode
+                        value={liveId}
+                        size={300}
                     />
-                    <MapboxGL.MarkerView
-                        id={"marker"}
-                        coordinate={coordinates}>
-                        <View>
-                            <Image
-                                source={require("./location.jpg")}
-                                style={{
-                                    width: 50,
-                                    height: 50,
-                                    borderRadius: 50,
-                                    backgroundColor: "red",
-                                    resizeMode: "cover",
-                                    borderColor: "#05A3D9",
-                                    borderWidth: 3,
-                                }}
-                            />
-                        </View>
-                    </MapboxGL.MarkerView>
-                </MapboxGL.MapView>
-            </View>
-            <View style={{flex:1}}>
+                </View>
+            )}
+            {!qrCode && (
+                <View style={styles.container}>
+                    <MapboxGL.MapView
+                        style={styles.map}
+                    >
+                        <MapboxGL.Camera
+                            zoomLevel={16}
+                            centerCoordinate={coordinates}
+                        />
+                        <MapboxGL.MarkerView
+                            id={"marker"}
+                            coordinate={coordinates}>
+                            <View>
+                                <Image
+                                    source={require("./location.jpg")}
+                                    style={{
+                                        width: 50,
+                                        height: 50,
+                                        borderRadius: 50,
+                                        backgroundColor: "red",
+                                        resizeMode: "cover",
+                                        borderColor: "#05A3D9",
+                                        borderWidth: 3,
+                                    }}
+                                />
+                            </View>
+                        </MapboxGL.MarkerView>
+                    </MapboxGL.MapView>
+                </View>
+            )}
+
+            <View style={{flex:1, flexDirection:'row'}}>
                 <Button
                     mode={'contained'}
                     style={styles.loginButton}
                     onPress={async () => {
-                        console.log(user.id);
+                        //console.log(user.id);
                         //getOneTimeLocation();
                         const mux_instance = axios.create({
                             baseURL: 'https://api.mux.com',
@@ -215,14 +229,14 @@ const App =({navigation, route})=> {
                                 "playback_policy": ["public"]
                             }
                         });
-                        console.log(mux_response.data.data.stream_key);
-                        console.log(mux_response.data.data.playback_ids[0]);
+                        /*console.log(mux_response.data.data.stream_key);
+                        console.log(mux_response.data.data);*/
                         setStreamKey(mux_response.data.data.stream_key);
                         firestore()
                             .collection('Live')
                             .add({
                                 sender: user.id.toString(),
-                                receivers: ['y56J4Lmp61MUpnhJ6SUAIZ7NPvt2'],
+                                receivers: [],
                                 startCoordinates: coordinates,
                                 startTime: new Date(),
                                 historyCoordinates: [{longitude: coordinates[0], latitude: coordinates[1]}],
@@ -242,21 +256,27 @@ const App =({navigation, route})=> {
                 >
                     <Text style={styles.loginButtonText}>Share Live</Text>
                 </Button>
+                <Button mode={'contained'}
+                        style={styles.loginButton}
+                        onPress={() => {
+                            setQrCode(!qrCode);
+                        }}
+                >
+                    <Text>QR</Text>
+                </Button>
+
+                <Button
+                    mode={'contained'}
+                    style={styles.loginButton}
+                    onPress = {() => {
+                        // Clipboard.setString(liveId);
+                        getOneTimeLocation();
+                    }}
+
+                >
+                    <Text>Copy</Text>
+                </Button>
             </View>
-            {/*<View style={{flex: 1, flexDirection:'row'}}>
-                <Button
-                    mode={'contained'}
-                    style={styles.loginButton}
-                >
-                    <Text style={styles.loginButtonText}>Health Care</Text>
-                </Button>
-                <Button
-                    mode={'contained'}
-                    style={styles.loginButton}
-                >
-                    <Text style={styles.loginButtonText}>Security</Text>
-                </Button>
-            </View>*/}
         </View>
     );
 }

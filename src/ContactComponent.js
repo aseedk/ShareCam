@@ -17,11 +17,21 @@ import auth from "@react-native-firebase/auth";
 
 const ContactComponent = () => {
     const [contacts, setContacts] = useState([]);
+    const [myContacts, setMyContacts] = useState([]);
     const [search, setSearch] = useState('');
-    useEffect(()=>{
-        firestore().collection('Users').get().then(r => setContacts(r.docs));
-        /*firestore().collection('Users').get().then(r => console.log(r.docs))*/
-    })
+    useEffect(() => {
+        async function fetchData (){
+            await firestore().collection('Users').get().then(r => setContacts(r.docs));
+            await firestore().collection('Users').doc(auth().currentUser.uid).get().then(r => {
+                if (r.data().contacts !== undefined) {
+                    setMyContacts(r.data().contacts)
+                } else {
+                    setMyContacts([])
+                }
+            });
+        }
+        fetchData();
+    }, [contacts, myContacts]);
     return(
         <View style={styles.container}>
             <View style={{justifyContent: 'center', alignItems: 'center', borderBottomWidth: 1}}>
@@ -36,10 +46,10 @@ const ContactComponent = () => {
                 />
             </View>
             <View>
-                <Headline style={{textAlign: 'center', marginBottom: 10}}>My Contacts</Headline>
+                <Headline style={{textAlign: 'center', marginBottom: 10}}>Add Contacts</Headline>
                 <ScrollView>
                     {contacts.map((val, ind) => {
-                        if(val.data().name.toLowerCase().includes(search.toLowerCase()) && val.id !== auth().currentUser.uid){
+                        if(val.data().name.toLowerCase().includes(search.toLowerCase()) && val.id !== auth().currentUser.uid && !myContacts.includes(val.id)){
                             return(
                                 <View key={ind} style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10}}>
                                     <View style={{flexDirection: 'row', alignItems: 'center'}}>

@@ -46,21 +46,28 @@ export default function MainMenuComponent({route, navigation}){
                             </Card.Content>
                         </Card>
                     </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.card}
+                        onPress={()=> navigation.navigate('ShareLink',{
+                            user: user
+                        })}
+                    >
+                        <Card>
+                            <Card.Title
+                                left={(props) =>
+                                    <Avatar.Icon {...props}
+                                                 color={'#05A3D9'}
+                                                 size={75}
+                                                 style={styles.cardBackground}
+                                                 icon="share" />}
+                            />
+                            <Card.Content>
+                                <Text style={styles.cardContentText}>Share Ride </Text>
+                                <Paragraph style={styles.cardContentParagraph}>Share Cab camera with your friends</Paragraph>
+                            </Card.Content>
+                        </Card>
+                    </TouchableOpacity>
 
-                    <Card style={styles.card}>
-                        <Card.Title
-                            left={(props) =>
-                                <Avatar.Icon {...props}
-                                             color={'#05A3D9'}
-                                             size={75}
-                                             style={styles.cardBackground}
-                                             icon="credit-card-outline" />}
-                        />
-                        <Card.Content>
-                            <Text style={styles.cardContentText}>Bills</Text>
-                            <Paragraph style={styles.cardContentParagraph}>Payment/Transactions </Paragraph>
-                        </Card.Content>
-                    </Card>
                 </View>
                 <View style={styles.cardRow}>
                     <Card style={styles.card}>

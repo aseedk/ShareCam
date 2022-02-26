@@ -5,9 +5,9 @@ import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 
 export default function LoginComponent({navigation}){
-    const [email, setEmail] = React.useState('test@test.com');
+    const [email, setEmail] = React.useState('test@viewer.com');
     const [emailError, setEmailError] = React.useState(false);
-    const [password, setPassword] = React.useState('test1234');
+    const [password, setPassword] = React.useState('viewer1234');
     const [passwordError, setPasswordError] = React.useState(false);
     const [eye, setEye] = React.useState(true);
 
